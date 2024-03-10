@@ -35,7 +35,7 @@ impl Block {
 
     ///new Genesis Block
     pub fn new_genesis_block(coinbase: Transaction) -> Block {
-        Block::new_block(vec![coinbase], String::new(), 0).unwrap()
+        Block::new_block(vec![coinbase], String::from("nil"), 0).unwrap()
     }
 
     pub fn new_block(
