@@ -1,59 +1,65 @@
-use std::time::SystemTime;
-use bincode::{Error, ErrorKind};
-use clap::error;
+// block.rs
+
+use crate::{errors::Result, transaction::Transaction};
+
+use bincode;
 use crypto::{digest::Digest, sha2::Sha256};
 use log::info;
+use serde::{Deserialize, Serialize};
+use std::time::SystemTime;
 
-pub type Result<T> = std::result::Result<T, failure::Error>;
+pub const TARGET_HEXT: usize = 4;
 
-
-const TARGET_HEXT: usize = 4;
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Block {
     timestamp: u128,
-    transactions: String,
+    transactions: Vec<Transaction>,
     prev_block_hash: String,
     hash: String,
     height: usize,
     nonce: i32,
 }
 
-#[derive(Debug)]
-pub struct Blockchain {
-    blocks: Vec<Block>
-}
-
 impl Block {
+    pub fn get_transactions(&self) -> &Vec<Transaction> {
+        &self.transactions
+    }
+
+    pub(crate) fn get_prev_hash(&self) -> String {
+        self.prev_block_hash.clone()
+    }
 
     pub fn get_hash(&self) -> String {
         self.hash.clone()
     }
 
-
     ///new Genesis Block
-    pub fn new_genesis_block() -> Block{
-        Block::new_block(String::from("Genesis Block"), String::new(), 0).unwrap()
+    pub fn new_genesis_block(coinbase: Transaction) -> Block {
+        Block::new_block(vec![coinbase], String::new(), 0).unwrap()
     }
 
-    pub fn new_block(data: String, prev_block_hash: String, height: usize) -> Result<Block> {
+    pub fn new_block(
+        data: Vec<Transaction>,
+        prev_block_hash: String,
+        height: usize,
+    ) -> Result<Block> {
         let timestamp = SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)?
             .as_millis();
-        
-        let mut block  = Block {
+
+        let mut block = Block {
             timestamp: timestamp,
             transactions: data,
             prev_block_hash,
             hash: String::new(),
-            height,
+            height: height,
             nonce: 0,
         };
-        block.run_proof_if_work()?;
+        block.run_proof_of_work()?;
         Ok(block)
     }
 
-    fn run_proof_if_work(&mut self) -> Result<()> {
+    fn run_proof_of_work(&mut self) -> Result<()> {
         info!("Mining the block");
         while !self.validate()? {
             self.nonce += 1;
@@ -80,38 +86,9 @@ impl Block {
             self.transactions.clone(),
             self.timestamp,
             TARGET_HEXT,
-            self.nonce
+            self.nonce,
         );
         let bytes = bincode::serialize(&content)?;
         Ok(bytes)
-    }
-}
-
-impl Blockchain {
-    pub fn new() -> Blockchain {
-        Blockchain {
-            blocks: vec![Block::new_genesis_block()]
-        }
-    }
-
-    pub fn add_block(&mut self, data: String) -> Result<()> {
-        let prev = self.blocks.last().unwrap();
-        let new_block = Block::new_block(data, prev.get_hash(), TARGET_HEXT)?;
-        self.blocks.push(new_block);
-        Ok(())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_blockchain() {
-        let mut b = Blockchain::new();
-        b.add_block("data".to_string());
-        b.add_block("data2".to_string());
-        b.add_block("data3".to_string());
-        dbg!(b);
     }
 }
