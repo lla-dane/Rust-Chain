@@ -2,6 +2,7 @@
 
 use std::collections::HashMap;
 
+use failure::format_err;
 use log::info;
 
 use crate::block::{Block, TARGET_HEXT};
@@ -77,6 +78,40 @@ impl Blockchain {
             current_hash: self.current_hash.clone(),
             bc: &self,
         }
+    }
+
+    pub fn find_tranasaction(&self, id: &str) -> Result<Transaction> {
+        for block in self.iter() {
+            for tx in block.get_transactions() {
+                if tx.id == id {
+                    return Ok(tx.clone());
+                }
+            }
+        }
+        Err(format_err!("Transaction is not found"))
+    }
+
+    fn get_prev_txs(&self, tx: &Transaction) -> Result<HashMap<String, Transaction>> {
+        let mut prev_txs = HashMap::new();
+        for tx_input in  &tx.v_inputs {
+            let prev_tx = self.find_tranasaction(&tx_input.txid)?;
+            prev_txs.insert(prev_tx.id.clone(), prev_tx);
+        }
+
+        Ok(prev_txs)
+    }
+
+    pub fn sign_transaction(&self, tx: &mut Transaction, private_key: &[u8]) -> Result<()> {
+        let prev_txs = self.get_prev_txs(tx)?;
+        tx.sign(private_key, prev_txs)?;
+        Ok(())
+    }
+
+    pub fn verify_transaction(&self, tx: &mut Transaction) -> Result<bool> {
+        
+        let prev_txs = self.get_prev_txs(tx)?;
+        tx.verify(prev_txs)
+
     }
 
     // Returns a list of all transactions containing UTXOs
@@ -165,8 +200,7 @@ impl Blockchain {
         }
     }
     (accumulated, unspent_outputs)
-} 
-
+    } 
 
 }
 
