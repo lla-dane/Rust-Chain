@@ -91,7 +91,7 @@ impl Cli {
             let mut bc = Blockchain::open_blockchain()?;
             let tx = Transaction::new_transaction(&sender_addr, &receiver_addr, amount, &bc)?;
             bc.add_block(vec![tx])?;
-            println!("BLOCK CREATES...!!");
+            println!("BLOCK CREATED...!!");
         }
 
         Ok(())

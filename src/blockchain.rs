@@ -6,7 +6,8 @@ use log::info;
 
 use crate::block::{Block, TARGET_HEXT};
 use crate::errors::Result;
-use crate::transaction::{TXOutput, Transaction};
+use crate::transaction::Transaction;
+use crate::tx::TXOutput;
 
 const GENSIS_COINBASE_DATA: &str =
     "SATOSHI NAKAMOTO";
