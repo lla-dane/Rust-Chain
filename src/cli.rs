@@ -2,12 +2,12 @@
 
 use std::process::exit;
 
-use clap::builder::Str;
+use bitcoincash_addr::Address;
 use clap::{arg, Command};
 
 use crate::blockchain::Blockchain;
 use crate::errors::Result;
-use crate::transaction::{Transaction};
+use crate::transaction::Transaction;
 use crate::wallet::Wallets;
 
 pub struct Cli {}
@@ -57,9 +57,9 @@ impl Cli {
 
         if let Some(ref matches) = matches.subcommand_matches("getbalance") {
             if let Some(address) = matches.get_one::<String>("ADDRESS") {
-                let address = String::from(address);
+                let pub_key_hash = Address::decode(&address).unwrap().body;
                 let bc = Blockchain::open_blockchain()?;
-                let utxos = bc.find_utxo(&address);
+                let utxos = bc.find_utxo(&pub_key_hash);
                 let mut balance = 0;
                 for utxo in utxos {
                     balance += utxo.value;
@@ -111,8 +111,6 @@ impl Cli {
             for addr in addresses {
                 println!("{}", addr);
             }
-
-
         }
 
         Ok(())

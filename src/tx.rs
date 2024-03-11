@@ -1,37 +1,37 @@
-use std::collections::HashMap;
 
 use bitcoincash_addr::Address;
 use log::debug;
 use serde::{Deserialize, Serialize};
 
-use crate::transaction::Transaction;
 use crate::errors::Result;
-
+use crate::wallet::hash_pub_key;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct TXInput {
     pub txid: String, // Transaction ID of the prev transaction from where the input came from.
     pub output_index: i32, // Index of the output in the previous transaction
     pub signature: Vec<u8>,
-    pub pub_key: Vec<u8>, 
+    pub pub_key: Vec<u8>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct TXOutput {
-    pub value: i32,             // The amount of crypto the that the output holds
-    pub pub_key_hash: Vec<u8>, // PubKey Script
+    pub value: i32,            // The amount of crypto the that the output holds
+    pub pub_key_hash: Vec<u8>, // Receiver address PKH
 }
 
 impl TXInput {
     // CanUnlockOutputWith checks whether the address initiated the transaction
-    pub fn can_unlock_output_with(&self, sender_address: &str) -> bool {
-        self.script_sig == sender_address
+    pub fn can_unlock_output_with(&self, sender_address: &[u8]) -> bool {
+        let mut pubkeyhash = self.pub_key.clone();
+        hash_pub_key(&mut pubkeyhash);
+        pubkeyhash == sender_address
     }
+
 
 }
 
 impl TXOutput {
-
     pub fn new(value: i32, receiver_address: String) -> Result<Self> {
         let mut txo = TXOutput {
             value,

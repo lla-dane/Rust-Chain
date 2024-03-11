@@ -80,6 +80,7 @@ impl Blockchain {
         }
     }
 
+    // Returns Transaction with a given transaction id from the whole Blockchain
     pub fn find_tranasaction(&self, id: &str) -> Result<Transaction> {
         for block in self.iter() {
             for tx in block.get_transactions() {
@@ -91,6 +92,7 @@ impl Blockchain {
         Err(format_err!("Transaction is not found"))
     }
 
+    // Returns the hash map of the all the prev txs which contained the inputs of the current tx 
     fn get_prev_txs(&self, tx: &Transaction) -> Result<HashMap<String, Transaction>> {
         let mut prev_txs = HashMap::new();
         for tx_input in  &tx.v_inputs {
@@ -101,21 +103,22 @@ impl Blockchain {
         Ok(prev_txs)
     }
 
+    // Signs all the input UTXOs of the given transaction
     pub fn sign_transaction(&self, tx: &mut Transaction, private_key: &[u8]) -> Result<()> {
         let prev_txs = self.get_prev_txs(tx)?;
         tx.sign(private_key, prev_txs)?;
         Ok(())
     }
 
-    pub fn verify_transaction(&self, tx: &mut Transaction) -> Result<bool> {
-        
+    // Verifies that all the input UTXOs are correctly signed 
+    pub fn verify_transaction(&self, tx: &mut Transaction) -> Result<bool> { 
         let prev_txs = self.get_prev_txs(tx)?;
         tx.verify(prev_txs)
 
     }
 
     // Returns a list of all transactions containing UTXOs
-    fn find_unspent_transactions(&self, address: &str) -> Vec<Transaction> {
+    fn find_unspent_transactions(&self, address: &[u8]) -> Vec<Transaction> {
 
         // String is the txID 
         // Value is the vector of integers containing the index of outputs in the tx that have been spent
@@ -163,7 +166,7 @@ impl Blockchain {
     }
 
     // Returns a list of all UTXOs 
-    pub fn find_utxo(&self, address: &str) -> Vec<TXOutput> {
+    pub fn find_utxo(&self, address: &[u8]) -> Vec<TXOutput> {
         let mut utxos = Vec::<TXOutput>::new();
         let unspent_txs = self.find_unspent_transactions(address);
         for tx in unspent_txs {
@@ -177,7 +180,7 @@ impl Blockchain {
     }
 
     // Finds the sufficient UTXOs for the transacation to take place 
-    pub fn find_spendable_outputs(&self, address: &str, amount: i32) -> (i32, HashMap<String, Vec<i32>>) {
+    pub fn find_spendable_outputs(&self, address: &[u8], amount: i32) -> (i32, HashMap<String, Vec<i32>>) {
     let mut unspent_outputs: HashMap<String, Vec<i32>> = HashMap::new();
     let mut accumulated = 0;
     let unspent_txs = self.find_unspent_transactions(address);
