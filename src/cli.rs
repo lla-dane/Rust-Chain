@@ -8,6 +8,7 @@ use clap::{arg, Command};
 use crate::blockchain::Blockchain;
 use crate::errors::Result;
 use crate::transaction::{Transaction};
+use crate::wallet::Wallets;
 
 pub struct Cli {}
 
@@ -21,6 +22,8 @@ impl Cli {
             .version("0.1")
             .author("github.com/lla-dane/Rust-Chain")
             .subcommand(Command::new("printchain").about("print all the chain blocks"))
+            .subcommand(Command::new("createwallet").about("create a wallet"))
+            .subcommand(Command::new("listaddresses").about("list all addresses"))
             .subcommand(Command::new("getbalance")
                 .about("get balance in the blockchain")
                 .arg(arg!(<ADDRESS>"'The Address it get balance for'"))
@@ -92,6 +95,24 @@ impl Cli {
             let tx = Transaction::new_transaction(&sender_addr, &receiver_addr, amount, &bc)?;
             bc.add_block(vec![tx])?;
             println!("BLOCK CREATED...!!");
+        }
+
+        if let Some(_) = matches.subcommand_matches("createwallet") {
+            let mut ws = Wallets::new()?;
+            let address = ws.create_wallet();
+            ws.save_all()?;
+            println!("success: address {}", address);
+        }
+
+        if let Some(_) = matches.subcommand_matches("listaddresses") {
+            let ws = Wallets::new()?;
+            let addresses = ws.get_all_address();
+            println!("addresses: ");
+            for addr in addresses {
+                println!("{}", addr);
+            }
+
+
         }
 
         Ok(())

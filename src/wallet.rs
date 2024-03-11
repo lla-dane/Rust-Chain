@@ -19,6 +19,8 @@ pub struct Wallets {
 }
 
 impl Wallet {
+
+    // Creates a public and private key pair using eleptical... functions
     fn new() -> Self {
 
         // The key declaration means it is an array of 32 bytes (u8 integers) all initialised with 0
@@ -40,6 +42,7 @@ impl Wallet {
         }
     }
 
+    // Returns Base58 encoding of the public key hash
     fn get_address(&self) -> String {
         let mut pub_hash = self.public_key.clone();
         hash_pub_key(&mut pub_hash);
@@ -56,6 +59,7 @@ impl Wallet {
 
 }
 
+// Returns the SHA-256 RIPEMD-160 hash of the public key(public key hash)
 pub fn hash_pub_key(pub_key: &mut Vec<u8>) {
     let mut hasher1 = Sha256::new();
     hasher1.input(pub_key);
@@ -70,14 +74,16 @@ pub fn hash_pub_key(pub_key: &mut Vec<u8>) {
 }
 
 impl Wallets {
+
+    // Gets hash map of all wallets and their Base58 encoding of the public key hash 
     pub fn new() -> Result<Wallets> {
         let mut wlt = Wallets {
             wallets: HashMap::<String, Wallet>::new(),
         };
 
-        let db = sled::open("data/blocks")?;
-        for item in db.into_iter() {
+        let db = sled::open("data/wallets")?;
 
+        for item in db.into_iter() {
             // IVec is wrapper around a vector of bytes(Vec<u8>) 
             // for handing storing and sending binary data
             let i = item?;
@@ -90,6 +96,7 @@ impl Wallets {
         Ok(wlt)
     }
 
+    // Returns the newly Base58 encoding of a PKH of a new wallet and insert them in DB
     pub fn create_wallet(&mut self) -> String {
         let wallet = Wallet::new();
         
@@ -100,6 +107,7 @@ impl Wallets {
         address
     }
 
+    // Get all the Base58 PKH stored in the DB
     pub fn get_all_address(&self) -> Vec<String> {
         let mut addresses = Vec::new();
         for (address, _) in &self.wallets {
@@ -108,10 +116,12 @@ impl Wallets {
         addresses
     }
 
+    // Get the wallet(PubK, PrvK) of a given Base58 PKH from the DB
     pub fn get_wallet(&self, address: &str) -> Option<&Wallet> {
         self.wallets.get(address)
     }
 
+    // Saves all the (Base58 PKH, wallets) in wallets in DB
     pub fn save_all(&self) -> Result<()> {
         let db = sled::open("data/wallets")?;
 
