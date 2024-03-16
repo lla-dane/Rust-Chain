@@ -7,6 +7,7 @@ mod errors;
 mod transaction;
 mod tx;
 mod wallet;
+mod utxoset;
 
 use crate::cli::Cli;
 use crate::errors::Result;

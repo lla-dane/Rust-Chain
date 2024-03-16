@@ -11,6 +11,7 @@ use serde::{Deserialize, Serialize};
 use crate::blockchain::Blockchain;
 use crate::errors::Result;
 use crate::tx::{TXInput, TXOutput};
+use crate::utxoset::UTXOSet;
 use crate::wallet::{hash_pub_key, Wallets};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -26,7 +27,7 @@ impl Transaction {
         sender_address: &str,
         receiver_address: &str,
         amount: i32,
-        bc: &Blockchain,
+        utxo: &UTXOSet,
     ) -> Result<Transaction> {
         let mut v_inputs = Vec::new();
 
@@ -43,7 +44,7 @@ impl Transaction {
         let mut pub_key_hash = wallet.public_key.clone();
         hash_pub_key(&mut pub_key_hash);
 
-        let balance_utxos = bc.find_spendable_outputs(&pub_key_hash, amount);
+        let balance_utxos = utxo.find_spendable_outputs(&pub_key_hash, amount)?;
         // Check if there is enough money to spend
         if balance_utxos.0 < amount {
             error!("Not Enough Balance");
@@ -82,7 +83,7 @@ impl Transaction {
         };
 
         tx.id = tx.hash()?;
-        bc.sign_transaction(&mut tx, &wallet.private_key)?;
+        utxo.blockchain.sign_transaction(&mut tx, &wallet.private_key)?;
 
         Ok(tx)
     }

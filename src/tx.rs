@@ -1,4 +1,3 @@
-
 use bitcoincash_addr::Address;
 use log::debug;
 use serde::{Deserialize, Serialize};
@@ -20,6 +19,11 @@ pub struct TXOutput {
     pub pub_key_hash: Vec<u8>, // Receiver address PKH
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct TXOutputs {
+    pub outputs: Vec<TXOutput>,
+}
+
 impl TXInput {
     // CanUnlockOutputWith checks whether the address initiated the transaction
     pub fn can_unlock_output_with(&self, sender_address: &[u8]) -> bool {
@@ -27,11 +31,15 @@ impl TXInput {
         hash_pub_key(&mut pubkeyhash);
         pubkeyhash == sender_address
     }
-
-
 }
 
 impl TXOutput {
+
+    pub fn is_locked_with_key(&self, pub_key_hash: &[u8]) -> bool {
+        self.pub_key_hash == pub_key_hash
+    }
+
+
     pub fn new(value: i32, receiver_address: String) -> Result<Self> {
         let mut txo = TXOutput {
             value,
