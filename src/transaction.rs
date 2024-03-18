@@ -2,6 +2,7 @@
 
 use std::collections::HashMap;
 
+use bincode::serialize;
 use crypto::ed25519;
 use crypto::{digest::Digest, sha2::Sha256};
 use failure::format_err;
@@ -211,12 +212,13 @@ impl Transaction {
         Ok(true)
     }
 
-    fn hash(&mut self) -> Result<String> {
-        self.id = String::new();
-        let data = bincode::serialize(self)?;
+    pub fn hash(&mut self) -> Result<String> {
+        let mut copy = self.clone();
+        copy.id = String::new();
+        let data = bincode::serialize(&copy)?;
         let mut hasher = Sha256::new();
         hasher.input(&data[..]);
-        Ok(hasher.result_str())
+        Ok(hasher.result_str())   
     }
 
     // Creates a copy of the transaction with any signature in any of the inputs

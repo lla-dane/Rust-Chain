@@ -5,6 +5,8 @@ use crate::{errors::Result, transaction::Transaction};
 use bincode;
 use crypto::{digest::Digest, sha2::Sha256};
 use log::info;
+use merkle_cbt::merkle_tree::Merge;
+use merkle_cbt::merkle_tree::CBMT;
 use serde::{Deserialize, Serialize};
 use std::time::SystemTime;
 
@@ -19,6 +21,8 @@ pub struct Block {
     height: usize,
     nonce: i32,
 }
+
+struct MergeTX {}
 
 impl Block {
     pub fn get_transactions(&self) -> &Vec<Transaction> {
@@ -90,5 +94,30 @@ impl Block {
         );
         let bytes = bincode::serialize(&content)?;
         Ok(bytes)
+    }
+
+    fn hash_transactions(&self) -> Result<Vec<u8>> {
+        let mut transactions = Vec::new();
+        for tx in &self.transactions {
+            let mut copy = tx.clone();
+            transactions.push(copy.hash()?.as_bytes().to_owned());
+        }
+        let tree = CBMT::<Vec<u8>, MergeTX>::build_merkle_tree(&*transactions);
+        Ok(tree.root())
+    }
+ 
+}
+
+
+impl Merge for MergeTX {
+    type Item = Vec<u8>;
+    fn merge(left: &Self::Item, right: &Self::Item) -> Self::Item {
+        let mut hasher = Sha256::new();
+        let mut data: Vec<u8> = left.clone();
+        data.append(&mut right.clone());
+        hasher.input(&data);
+        let mut re: [u8; 32] = [0; 32];
+        hasher.result(&mut re);
+        re.to_vec()
     }
 }
