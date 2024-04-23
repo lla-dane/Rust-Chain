@@ -1,1 +1,15 @@
-### A simplified implementation of a bitcoin based blockchain will all most of its features in rust.
+#### A simplified implementation of a bitcoin based blockchain in rust.
+
+### Usage 
+* Create wallet:
+  ```
+  cargo run createwallet
+  ```
+* Create blockchain:
+  ```
+  cargo run create <address>
+  ```
+* send coins (if -m is specified, the block will be mined immediately in the same node):
+  ```
+  cargo run send <from> <to> <amount> -m 
+  ```
